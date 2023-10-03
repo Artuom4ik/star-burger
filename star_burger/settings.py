@@ -1,4 +1,5 @@
 import os
+import logging.config
 
 import dj_database_url
 
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
+    "phonenumber_field",
 ]
 
 MIDDLEWARE = [
@@ -74,6 +76,31 @@ TEMPLATES = [
         },
     },
 ]
+
+LOG_LEVEL = 'DEBUG' if DEBUG else 'INFO'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'file': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+        }
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'formatter': 'file',
+            'filename': 'app.log'
+        }
+    },
+    'loggers': {
+        '': {
+            'level': LOG_LEVEL,
+            'handlers': ['file',]
+        }
+    }
+}
 
 WSGI_APPLICATION = 'star_burger.wsgi.application'
 

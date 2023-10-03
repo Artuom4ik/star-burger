@@ -1,3 +1,5 @@
+import logging
+
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
@@ -9,6 +11,9 @@ from django.contrib.auth import views as auth_views
 
 
 from foodcartapp.models import Product, Restaurant
+
+
+logger = logging.getLogger(__name__)
 
 
 class Login(forms.Form):
