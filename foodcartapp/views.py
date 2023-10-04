@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+from rest_framework import status
 
 from .models import Product, Order, OrderElements
 
@@ -67,8 +67,20 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    if request.method == "POST":
-        payload = request.data
+    payload = request.data
+    
+    try:
+        products = payload["products"]
+    except KeyError:
+        return Response({"products": "Обязательное поле."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if isinstance(products, str):
+        return Response({"products": 'Ожидался list со значениями, но был получен "str"'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if products is None:
+        return Response({"products": "Это поле не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if isinstance(products, list) and products:
         order_obj, created = Order.objects.update_or_create(
             first_name=payload["firstname"],
             last_name=payload["lastname"],
@@ -82,5 +94,7 @@ def register_order(request):
                 product=Product.objects.get(id=product['product']),
                 quantity=product['quantity']
             )
+    else:
+        return Response({"products": "Этот список не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
 
     return JsonResponse({"detail": "Метод\"GET\"не разрешен."})
