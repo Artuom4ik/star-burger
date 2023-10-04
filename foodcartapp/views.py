@@ -3,6 +3,8 @@ import logging
 
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 
 from .models import Product, Order, OrderElements
@@ -63,22 +65,22 @@ def product_list_api(request):
     })
 
 
+@api_view(['POST'])
 def register_order(request):
-    order = json.loads(request.body.decode())
-    print(order)
-    order_obj, created = Order.objects.update_or_create(
-        first_name=order["firstname"],
-        last_name=order["lastname"],
-        phone_number=order["phonenumber"],
-        address=order["address"] 
-    )
-    
-    for prod in order['products']:
-        orderelements = OrderElements.objects.get_or_create(
-            order=Order.objects.get(id=order_obj.id),
-            product=Product.objects.get(id=prod['product']),
-            quantity=prod['quantity']
+    if request.method == "POST":
+        payload = request.data
+        order_obj, created = Order.objects.update_or_create(
+            first_name=payload["firstname"],
+            last_name=payload["lastname"],
+            phone_number=payload["phonenumber"],
+            address=payload["address"] 
         )
+        
+        for product in payload['products']:
+            orderelements = OrderElements.objects.get_or_create(
+                order=Order.objects.get(id=order_obj.id),
+                product=Product.objects.get(id=product['product']),
+                quantity=product['quantity']
+            )
 
-    # TODO это лишь заглушка
-    return JsonResponse({})
+    return JsonResponse({"detail": "Метод\"GET\"не разрешен."})
