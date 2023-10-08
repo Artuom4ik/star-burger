@@ -7,6 +7,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.serializers import ModelSerializer
+from rest_framework.renderers import JSONRenderer
+
 
 from .models import Product, Order, OrderElements
 
@@ -21,7 +23,7 @@ class OrderElementsSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
-    products = OrderElementsSerializer(many=True, allow_empty=False)
+    products = OrderElementsSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
         model = Order
@@ -98,5 +100,5 @@ def register_order(request):
             product=Product.objects.get(id=product['product'].id),
             quantity=product['quantity']
         )
-    
-    return JsonResponse({"detail": "Метод\"GET\"не разрешен."})
+
+    return Response(serializer.data)
