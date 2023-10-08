@@ -6,11 +6,26 @@ from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.serializers import ModelSerializer
 
 from .models import Product, Order, OrderElements
 
 
 logger = logging.getLogger(__name__)
+
+
+class OrderElementsSerializer(ModelSerializer):
+    class Meta:
+        model = OrderElements
+        fields = ['product', 'quantity']
+
+
+class OrderSerializer(ModelSerializer):
+    products = OrderElementsSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
 
 
 def banners_list_api(request):
@@ -67,58 +82,21 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    payload = request.data
-
-    try:
-        products = payload["products"]
-    except KeyError:
-        return Response({"products": "Обязательное поле."}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+   
+    order_obj, created = Order.objects.update_or_create(
+        firstname=serializer.validated_data["firstname"],
+        lastname=serializer.validated_data["lastname"],
+        phonenumber=serializer.validated_data["phonenumber"],
+        address=serializer.validated_data["address"]
+    )
     
-    if "firstname" and "lastname" and "phonenumber" and "address" not in payload.keys():
-        return Response({"firstname, lastname, phonenumber, address": "Обязательное поле."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if payload["firstname"] is None and payload["lastname"] is None and payload["phonenumber"] is None and payload["address"] is None:
-        return Response({"firstname, lastname, phonenumber, address": "Это поле не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if isinstance(products, str):
-        return Response({"products": 'Ожидался list со значениями, но был получен "str"'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if products is None:
-        return Response({"products": "Это поле не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if payload["firstname"] is None:
-        return Response({"firstname": "Это поле не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if isinstance(payload["firstname"], str) == False:
-        return Response({"firstname": "Not a valid string."}, status=status.HTTP_400_BAD_REQUEST)        
-
-    if payload["phonenumber"] == "" or payload["phonenumber"] is None:
-        return Response({"phonenumber": "Это поле не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if isinstance(products, list) and products:
-        order_obj, created = Order.objects.update_or_create(
-            first_name=payload["firstname"],
-            last_name=payload["lastname"],
-            phone_number=payload["phonenumber"],
-            address=payload["address"]
+    for product in serializer.validated_data['products']:
+        orderelements = OrderElements.objects.get_or_create(
+            order=Order.objects.get(id=order_obj.id),
+            product=Product.objects.get(id=product['product'].id),
+            quantity=product['quantity']
         )
-        
-        if not order_obj.phone_number.is_valid():
-            order_obj.delete()
-            return Response({"phonenumber": "Введен некорректный номер телефона."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            for product in products:
-                orderelements = OrderElements.objects.get_or_create(
-                    order=Order.objects.get(id=order_obj.id),
-                    product=Product.objects.get(id=product['product']),
-                    quantity=product['quantity']
-                )
-        except Product.DoesNotExist:
-            order_obj.delete()
-            return Response({"products": f"Недопустимый первичный ключ {product['product']}"}, status=status.HTTP_400_BAD_REQUEST)
-                    
-    else:
-        return Response({"products": "Этот список не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     return JsonResponse({"detail": "Метод\"GET\"не разрешен."})
