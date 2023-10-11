@@ -1,4 +1,3 @@
-import json
 import logging
 
 from django.http import JsonResponse
@@ -6,28 +5,12 @@ from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.serializers import ModelSerializer
-from rest_framework.renderers import JSONRenderer
 
-
+from .serializer import OrderSerializer
 from .models import Product, Order, OrderElements
 
 
 logger = logging.getLogger(__name__)
-
-
-class OrderElementsSerializer(ModelSerializer):
-    class Meta:
-        model = OrderElements
-        fields = ['product', 'quantity']
-
-
-class OrderSerializer(ModelSerializer):
-    products = OrderElementsSerializer(many=True, allow_empty=False, write_only=True)
-
-    class Meta:
-        model = Order
-        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
 
 
 def banners_list_api(request):
