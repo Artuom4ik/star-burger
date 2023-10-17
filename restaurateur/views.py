@@ -8,9 +8,10 @@ from django.contrib.auth.decorators import user_passes_test
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
+from django.db.models import F
 
-
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant
+from foodcartapp.models import Order, OrderElements
 
 
 logger = logging.getLogger(__name__)
@@ -97,17 +98,16 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.all()
+    orders = Order.objects.get_order_price()
 
     context = {
-        'orders': [
-        {
+        'orders': [{
             'id': order.id,
             'firstname': order.firstname,
             'lastname': order.lastname,
+            'order_cost': order.order_cost,
             'phonenumber': order.phonenumber,
             'address': order.address
-
         } for order in orders]
     }
 
