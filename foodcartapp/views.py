@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
@@ -65,10 +66,11 @@ def product_list_api(request):
 
 
 @api_view(['POST'])
+@transaction.non_atomic_requests
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-   
+            
     order_obj, created = Order.objects.update_or_create(
         firstname=serializer.validated_data["firstname"],
         lastname=serializer.validated_data["lastname"],
