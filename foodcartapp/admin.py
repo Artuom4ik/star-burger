@@ -115,6 +115,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 class OrderElementsInline(admin.TabularInline):
     model = OrderElements
+    fields = ('product', 'quantity', 'cost')
 
 
 @admin.register(Order)
@@ -125,4 +126,15 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(OrderElements)
 class OrderElementsAdmin(admin.ModelAdmin):
-    pass
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for instance in instances:
+            instance.cost = instance.product.price
+            instance.save()
+        formset.save_m2m()
+        # order_elements = OrderElements.objects.all()
+        # for order_element in order_elements.iterator():
+        #     order_element.cost = order_element.product.price * order_element.quantity
+        #     order_element.save()

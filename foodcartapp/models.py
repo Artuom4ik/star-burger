@@ -1,7 +1,8 @@
 from django.db import models
-from django.core.validators import MinValueValidator
-from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import F, Sum
+from django.core.validators import MinValueValidator
+
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class Restaurant(models.Model):
@@ -151,6 +152,7 @@ class OrderElements(models.Model):
     )
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="order_elements", verbose_name="Продукт")
     quantity = models.IntegerField(verbose_name="Количество")
+    cost = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)], verbose_name="Стоимость", default=0)
 
     def __str__(self):
         return f"{self.product} {self.order}"
