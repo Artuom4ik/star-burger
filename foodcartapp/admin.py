@@ -1,9 +1,12 @@
 import logging
 
 from django.contrib import admin
-from django.shortcuts import reverse
+from django.http.request import HttpRequest
+from django.http.response import HttpResponse
+from django.shortcuts import reverse, redirect
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import Product
 from .models import ProductCategory
@@ -123,6 +126,14 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderElementsInline,
     ]
+    def response_change(self,request, obj):
+        res = super().response_change(request, obj)
+        if "next" in request.GET:
+            if url_has_allowed_host_and_scheme(request.GET['next']):
+                return redirect(request.GET['next'])
+        else:
+            return res
+
 
 @admin.register(OrderElements)
 class OrderElementsAdmin(admin.ModelAdmin):
@@ -134,7 +145,4 @@ class OrderElementsAdmin(admin.ModelAdmin):
             instance.cost = instance.product.price
             instance.save()
         formset.save_m2m()
-        # order_elements = OrderElements.objects.all()
-        # for order_element in order_elements.iterator():
-        #     order_element.cost = order_element.product.price * order_element.quantity
-        #     order_element.save()
+        
