@@ -103,6 +103,7 @@ def view_orders(request):
     context = {
         'orders': [{
             'id': order.id,
+            'status': order.get_status_display(),
             'firstname': order.firstname,
             'lastname': order.lastname,
             'order_cost': order.order_cost,

@@ -14,6 +14,7 @@ from .models import Restaurant
 from .models import RestaurantMenuItem
 from .models import Order
 from .models import OrderElements
+from star_burger.settings import ALLOWED_HOSTS
 
 
 logger = logging.getLogger(__name__)
@@ -129,7 +130,10 @@ class OrderAdmin(admin.ModelAdmin):
     def response_change(self,request, obj):
         res = super().response_change(request, obj)
         if "next" in request.GET:
-            if url_has_allowed_host_and_scheme(request.GET['next']):
+            if url_has_allowed_host_and_scheme(
+                request.GET['next'],
+                allowed_hosts=ALLOWED_HOSTS
+            ):
                 return redirect(request.GET['next'])
         else:
             return res
