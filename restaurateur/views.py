@@ -108,7 +108,8 @@ def view_orders(request):
             'lastname': order.lastname,
             'order_cost': order.order_cost,
             'phonenumber': order.phonenumber,
-            'address': order.address
+            'address': order.address,
+            'comment': order.comment
         } for order in orders]
     }
 

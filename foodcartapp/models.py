@@ -138,12 +138,13 @@ class Order(models.Model):
         ('Delivered', 'Доставляется'),
         ('Completed', 'Выполнен')
     )
-    
+
     firstname = models.CharField(max_length=100, verbose_name="Имя")
     lastname = models.CharField(max_length=100, verbose_name="Фамилия")
     phonenumber = PhoneNumberField(region="RU", verbose_name="Номер телефона")
     address = models.CharField(max_length=200, verbose_name="Адрес доставки")
     status = models.CharField(max_length=100, choices=ORDER_STATUS, db_index=True, verbose_name='Статус заказа', default='Unprocessed')
+    comment = models.TextField('Комментарий', max_length=200, blank=True)
 
     objects = OrderQuerySet.as_manager()
 
