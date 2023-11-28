@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from django.db.models import Prefetch
+from collections import defaultdict
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -128,8 +130,22 @@ class RestaurantMenuItem(models.Model):
 
 
 class OrderQuerySet(models.QuerySet):
-    def get_order_price(self):
-        return self.annotate(order_cost=Sum(F("order_products__product__price") * F("order_products__quantity")))
+    def get_available_restaurants(self):
+        restaurants = defaultdict(set)
+        for restaurant_menu_item in RestaurantMenuItem.objects.filter(availability=True).select_related('restaurant', 'product'):
+            restaurants[restaurant_menu_item.restaurant].add(restaurant_menu_item.product)
+
+        for order in self:
+            order_restaurants = []
+            products = {order_elements.product for order_elements in 
+                        order.order_products.select_related('product')}
+
+            for restaurant, restaurant_products in restaurants.items():
+                if products.issubset(restaurant_products):
+                    order_restaurants.append(restaurant)
+
+            order.restaurants = order_restaurants
+        return self
 
 
 class Order(models.Model):
@@ -155,11 +171,13 @@ class Order(models.Model):
     called_at = models.DateTimeField(db_index=True, blank=True, null=True, verbose_name="Дата звонка")
     delivered_at = models.DateTimeField(db_index=True, blank=True, null=True, verbose_name="Дата доставки")
     payment_method = models.CharField(max_length=100, choices=PAYMENT_METHOD, db_index=True, verbose_name="Способ оплаты", default="")
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.PROTECT, blank=True, null=True, related_name='orders', verbose_name='Ресторан')
 
     objects = OrderQuerySet.as_manager()
 
     def __str__(self):
         return f"{self.firstname} {self.lastname} {self.address}"
+    
 
 
 class OrderElements(models.Model):

@@ -1,3 +1,5 @@
+import os
+import requests
 import logging
 
 from django import forms
@@ -5,13 +7,15 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
-from django.db.models import F
+from django.db.models import F, Sum
+from dotenv import load_dotenv
+from geopy import distance
 
 from foodcartapp.models import Product, Restaurant
 from foodcartapp.models import Order, OrderElements
+from foodcartapp.models import RestaurantMenuItem
 
 
 logger = logging.getLogger(__name__)
@@ -96,10 +100,32 @@ def view_restaurants(request):
     })
 
 
+def fetch_coordinates(address):
+    load_dotenv()
+    apikey = os.getenv('API_KEY')
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    response = requests.get(base_url, params={
+        "geocode": address,
+        "apikey": apikey,
+        "format": "json",
+    })
+    response.raise_for_status()
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lon, lat
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.get_order_price()
-
+    orders = Order.objects.annotate(
+        order_cost=Sum(F("order_products__product__price") * F("order_products__quantity"))
+        ).get_available_restaurants()
+    
     context = {
         'orders': [{
             'id': order.id,
@@ -110,6 +136,8 @@ def view_orders(request):
             'order_cost': order.order_cost,
             'phonenumber': order.phonenumber,
             'address': order.address,
+            'restaurants': order.restaurants,
+            # 'distance': distance.distance(fetch_coordinates(order.restaurants.address), fetch_coordinates(order.address)).km,
             'comment': order.comment
         } for order in orders]
     }
