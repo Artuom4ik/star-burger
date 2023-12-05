@@ -125,21 +125,16 @@ def view_orders(request):
     orders = Order.objects.annotate(
         order_cost=Sum(F("order_products__product__price") * F("order_products__quantity"))
         ).get_available_restaurants()
+    restaurants_distance = {}
+    for order in orders:
+        order_coordinates = fetch_coordinates(order.address)
+        for restaurant in order.restaurants:
+            restaurants_distance[order] = {restaurant: round(distance.distance(order_coordinates, fetch_coordinates(restaurant.address)).km, 3)}
+        restaurants_distance[order] = dict(sorted(restaurants_distance[order].items(), key=lambda item: item[1]))
+    print(restaurants_distance)
     
     context = {
-        'orders': [{
-            'id': order.id,
-            'status': order.get_status_display(),
-            'payment_method': order.get_payment_method_display(),
-            'firstname': order.firstname,
-            'lastname': order.lastname,
-            'order_cost': order.order_cost,
-            'phonenumber': order.phonenumber,
-            'address': order.address,
-            'restaurants': order.restaurants,
-            # 'distance': distance.distance(fetch_coordinates(order.restaurants.address), fetch_coordinates(order.address)).km,
-            'comment': order.comment
-        } for order in orders]
+        'orders': restaurants_distance
     }
 
     return render(request, template_name='order_items.html', context=context)

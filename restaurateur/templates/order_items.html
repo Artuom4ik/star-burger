@@ -25,27 +25,27 @@
       <th>Ссылка на админку</th>
     </tr>
 
-    {% for order in orders %}
+    {% for order, restaurants in orders.items %}
       <tr>
         <td>{{ order.id }}</td>
-        <td>{{ order.status }}</td>
-        <td>{{ order.payment_method }}</td>
+        <td>{{ order.get_status_display }}</td>
+        <td>{{ order.get_payment_method_display }}</td>
         <td>{{ order.order_cost }}</td>
         <td>{{ order.firstname }} {{ order.lastname }}</td>
         <td>{{ order.phonenumber }}</td>
         <td>{{ order.address }}</td>
         <td>{{ order.comment }}</td>
         <td>
-          {% if order.status == 'Готовится' %}
-            {% for restaurant in order.restaurants %}
+          {% if order.get_status_display == 'Готовится' %}
+            {% for restaurant, distance in restaurants.items %}
             <p>Готовит {{ restaurant }}</p>
             {% endfor %}
           {% else %}
             <details open>
               <summary>Может быть приготовлен ресторанами:</summary>
               <ul>
-                {% for restaurant in order.restaurants %}
-                  <li>{{ restaurant }}</li>
+                {% for restaurant, distance in restaurants.items %}
+                  <li>{{ restaurant }} - {{ distance }}km</li>
                 {% endfor %}
               </ul>
             </details>
