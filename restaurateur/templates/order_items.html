@@ -37,18 +37,22 @@
         <td>{{ order.comment }}</td>
         <td>
           {% if order.get_status_display == 'Готовится' %}
-            {% for restaurant, distance in restaurants.items %}
-            <p>Готовит {{ restaurant }}</p>
-            {% endfor %}
+              <p>Готовит {{ order.restaurant }}</p>
           {% else %}
-            <details open>
-              <summary>Может быть приготовлен ресторанами:</summary>
-              <ul>
-                {% for restaurant, distance in restaurants.items %}
-                  <li>{{ restaurant }} - {{ distance }}km</li>
-                {% endfor %}
-              </ul>
-            </details>
+            {% for restaurant, distance in restaurants.items %}
+              {% if distance %}
+                <details open>
+                  <summary>Может быть приготовлен ресторанами:</summary>
+                  <ul>
+                    {% for restaurant, distance in restaurants.items %}
+                      <li>{{ restaurant }} - {{ distance }}km</li>
+                    {% endfor %}
+                  </ul>
+                </details>
+              {% else %}
+                <p>Ошибка определения координат</p>
+              {% endif %}
+            {% endfor %}
           {% endif %}
       </td>
         <td><a href='{% url "admin:foodcartapp_order_change" object_id=order.id %}?next={{ request.get_full_path|urlencode }}'>Редактирование</a><td>

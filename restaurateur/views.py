@@ -117,7 +117,7 @@ def fetch_coordinates(address):
 
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
-    return lon, lat
+    return lat, lon
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
@@ -128,10 +128,17 @@ def view_orders(request):
     restaurants_distance = {}
     for order in orders:
         order_coordinates = fetch_coordinates(order.address)
+        print(order_coordinates)
         for restaurant in order.restaurants:
-            restaurants_distance[order] = {restaurant: round(distance.distance(order_coordinates, fetch_coordinates(restaurant.address)).km, 3)}
+            if order_coordinates:
+                restaurant_distance = round(distance.distance(order_coordinates, fetch_coordinates(restaurant.address)).km, 3)
+                if restaurant_distance <= 200:
+                    restaurants_distance[order] = {restaurant: restaurant_distance}
+                else:
+                    restaurants_distance[order] = {restaurant: False}
+            else:
+                restaurants_distance[order] = {restaurant: bool(order_coordinates)}
         restaurants_distance[order] = dict(sorted(restaurants_distance[order].items(), key=lambda item: item[1]))
-    print(restaurants_distance)
     
     context = {
         'orders': restaurants_distance
