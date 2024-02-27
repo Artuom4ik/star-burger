@@ -8,4 +8,5 @@ class Place(models.Model):
     longitude = models.FloatField(verbose_name="Долгота", null=True)
     update_at = models.DateTimeField('Время запроса к геокодеру', default=timezone.now)
 
-    
+    def __str__(self) -> str:
+        return self.address
