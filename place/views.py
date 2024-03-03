@@ -8,7 +8,7 @@ from .models import Place
 
 def fetch_coordinates(address):
     load_dotenv()
-    apikey = os.getenv('API_KEY')
+    apikey = os.getenv('YANDEX_GEOCODER_API_KEY')
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(base_url, params={
         "geocode": address,
